@@ -198,6 +198,22 @@ bpwatch start pylibmc_install
   source $BIN_DIR/steps/pylibmc
 bpwatch stop pylibmc_install
 
+# GMP support.
+# See [`bin/steps/gmp`](gmp.html).
+if (grep -Fiq "gmpy" requirements.txt || grep -Fiq "bigfloat" requirements.txt) then
+  bpwatch start gmp_install
+    source $BIN_DIR/steps/gmp
+  bpwatch stop gmp_install
+fi
+
+# MPFR support.
+# See [`bin/steps/mpfr`](mpfr.html).
+if (grep -Fiq "bigfloat" requirements.txt) then
+  bpwatch start mpfr_install
+    source $BIN_DIR/steps/mpfr
+  bpwatch stop mpfr_install
+fi
+
 # Install Mercurial if it appears to be required.
 if (grep -Fiq "hg+" requirements.txt) then
   bpwatch start mercurial_install
