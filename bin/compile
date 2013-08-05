@@ -214,6 +214,14 @@ if (grep -Fiq "bigfloat" requirements.txt) then
   bpwatch stop mpfr_install
 fi
 
+# MPC support.
+# See [`bin/steps/mpc`](mpc.html).
+if (grep -Fiq "gmpy" requirements.txt) then
+  bpwatch start mpc_install
+    source $BIN_DIR/steps/mpc
+  bpwatch stop mpc_install
+fi
+
 # Install Mercurial if it appears to be required.
 if (grep -Fiq "hg+" requirements.txt) then
   bpwatch start mercurial_install
