@@ -9,31 +9,14 @@
 #
 # This script is invoked by [`bin/compile`](/).
 
-# Syntax sugar.
-source $BIN_DIR/utils
-
+PACKAGE=gmp
 VERSION=5.1.2
-SOURCE=gmp-${VERSION}.tar.xz
-CHECKSUM=e87015a825a2445e169931ee27849d52576a2d9e338d1383dcb36fed68d0006f
-URL=ftp://ftp.gmplib.org/pub/gmp-${VERSION}/${SOURCE}
-URL_2=ftp://ftp.cs.tu-berlin.de/pub/gnu/gmp/${SOURCE}
+RELEASE="${PACKAGE}"-"${VERSION}"
+SOURCE="${RELEASE}".tar.xz
+TARGET="${RELEASE}"-`uname -m`
+DIGEST=c7d943a6eceb4f0d3d3ab1176aec37853831cdfa281e012f8a344ba3ceefcbc2
+URL=ftp://ftp.gmplib.org/pub/gmp-"${VERSION}"/"${SOURCE}"
+URL_2=ftp://ftp.cs.tu-berlin.de/pub/gnu/gmp/"${SOURCE}"
+CONF="--enable-shared --enable-cxx"
 
-puts-step "Installing GMP ${VERSION}"
-
-pushd .heroku
-PREFIX=$(pwd)/vendor
-
-curl -s -L -o ${SOURCE} ${URL} || curl -s -L -o ${SOURCE} ${URL_2}
-tar -xf ${SOURCE} > /dev/null
-rm ${SOURCE}
-
-pushd gmp-${VERSION}
-./configure --enable-shared --enable-cxx --prefix="${PREFIX}"
-make && make install
-popd
-rm -rf gmp-${VERSION}
-
-popd
-
-export CFLAGS=-I"${PREFIX}/include"
-export LDFLAGS=-L"${PREFIX}/lib"
+source $BIN_DIR/depbuild

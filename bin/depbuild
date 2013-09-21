@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+# Syntax sugar.
+source $BIN_DIR/utils
+puts-step "Installing ${PACKAGE} ${VERSION}"
+
+mkdir -p .heroku
+pushd .heroku
+
+PREFIX="$(pwd)"/vendor
+mkdir -p "${PREFIX}"
+
+if [ "x${BUILDPACK_CACHE_URL}" != "x" ]; then
+  pushd "${PREFIX}"
+  curl -s -L -o "${TARGET}".tar.xz        "${BUILDPACK_CACHE_URL}${TARGET}".tar.xz
+  curl -s -L -o "${TARGET}".tar.xz.sha256 "${BUILDPACK_CACHE_URL}${TARGET}".tar.xz.sha256
+  echo "${BUILDPACK_VERIFYING_KEY}" | \
+    openssl dgst -sha256 \
+      -verify /dev/stdin \
+      -signature "${TARGET}".tar.xz.sha256 \
+                 "${TARGET}".tar.xz \
+    || rm -f     "${TARGET}".tar.xz*
+  popd
+fi
+
+if [ ! -f "${PREFIX}/${TARGET}".tar.xz ]; then
+  curl -s -L -o "${SOURCE}" "${URL}" || curl -s -L -o "${SOURCE}" "${URL_2}"
+  echo "${DIGEST} *${SOURCE}" | sha256sum -c --quiet
+  tar -xf "${SOURCE}" > /dev/null
+  rm "${SOURCE}"
+
+  pushd "${PACKAGE}"-"${VERSION}"
+  ./configure ${CONF} --prefix="${PREFIX}"
+  make
+  make check
+
+  find "${PREFIX}" -not -type d -print0 >.pkglist
+  make install
+  cp -a "${PREFIX}" "${PREFIX}"-tmp
+  cat .pkglist | xargs -0 rm -rf
+  rm -f .pkglist
+  pushd "${PREFIX}"
+  find * -not -type d -print0 | sort -z | xargs -0 \
+    tar -rvf "${PREFIX}"-tmp/"${TARGET}".tar
+  popd
+  rm -rf "${PREFIX}"
+  mv "${PREFIX}"-tmp "${PREFIX}"
+
+  popd
+  rm -rf "${PACKAGE}"-"${VERSION}"
+
+  pushd "${PREFIX}"
+  xz --best "${TARGET}".tar
+  popd
+fi
+
+pushd "${PREFIX}"
+if [ "x${BUILDPACK_SIGNING_KEY}" != "x" ]; then
+  echo "$BUILDPACK_SIGNING_KEY" | \
+    openssl dgst -sha256 \
+      -sign /dev/stdin \
+      -out "${TARGET}".tar.xz.sha256 \
+           "${TARGET}".tar.xz
+fi
+popd
+
+popd
+
+if [ "x${BUILDPACK_CACHE_PREFIX}" != "x" ]; then
+  mkdir -p                                  "${BUILDPACK_CACHE_PREFIX}"
+  cp -a "${PREFIX}/${TARGET}".tar.xz        "${BUILDPACK_CACHE_PREFIX}"
+  cp -a "${PREFIX}/${TARGET}".tar.xz.sha256 "${BUILDPACK_CACHE_PREFIX}"
+fi
+rm -f "${PREFIX}/${TARGET}".tar.xz{,.sha256}
+
+export CFLAGS=-I"${PREFIX}"/include
+export LDFLAGS=-L"${PREFIX}"/lib

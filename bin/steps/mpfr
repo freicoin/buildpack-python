@@ -9,31 +9,14 @@
 #
 # This script is invoked by [`bin/compile`](/).
 
-# Syntax sugar.
-source $BIN_DIR/utils
-
+PACKAGE=mpfr
 VERSION=3.1.2
-SOURCE=mpfr-${VERSION}.tar.xz
-CHECKSUM=49d5acc32dbeec30a8e26af9c19845763d63feacb8bf97b12876008419f5a17a
+RELEASE="${PACKAGE}"-"${VERSION}"
+SOURCE="${RELEASE}".tar.xz
+TARGET="${RELEASE}"-`uname -m`
+DIGEST=399d0f47ef6608cc01d29ed1b99c7faff36d9994c45f36f41ba250147100453b
 URL=ftp://ftp.gnu.org/pub/gnu/${SOURCE}/${SOURCE}
 URL_2=http://www.mpfr.org/mpfr-${VERSION}/${SOURCE}
+CONF="--enable-shared --with-gmp='${PREFIX}'"
 
-puts-step "Installing MPFR ${VERSION}"
-
-pushd .heroku
-PREFIX=$(pwd)/vendor
-
-curl -s -L -o ${SOURCE} ${URL} || curl -s -L -o ${SOURCE} ${URL_2}
-tar -xf ${SOURCE} > /dev/null
-rm ${SOURCE}
-
-pushd mpfr-${VERSION}
-./configure --enable-shared --with-gmp="${PREFIX}" --prefix="${PREFIX}"
-make && make install
-popd
-rm -rf mpfr-${VERSION}
-
-popd
-
-export CFLAGS=-I"${PREFIX}/include"
-export LDFLAGS=-L"${PREFIX}/lib"
+source $BIN_DIR/depbuild
