@@ -34,6 +34,7 @@ if [ ! -f "${PREFIX}/${TARGET}".tar.xz ]; then
   make
   make check
 
+  make uninstall || true
   find "${PREFIX}" -not -type d -print0 >.pkglist
   make install
   cp -a "${PREFIX}" "${PREFIX}"-tmp
